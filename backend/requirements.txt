@@ -1,0 +1,39 @@
+fastapi==0.115.0
+uvicorn[standard]==0.30.0
+python-multipart==0.0.12
+
+# Database — MySQL async
+aiomysql==0.2.0
+sqlalchemy[asyncio]==2.0.35
+
+# Auth
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+
+# AI / RAG
+google-generativeai==0.8.3
+langchain==0.3.7
+langchain-google-genai==2.0.4
+langchain-community==0.3.7
+qdrant-client==1.12.0
+cohere==5.11.0
+rank-bm25==0.2.2
+
+# Document processing
+pymupdf==1.24.11
+
+# Evaluation
+ragas==0.2.5
+datasets==3.1.0
+
+# Observability
+langfuse==2.53.5
+
+# Resilience
+tenacity==9.0.0
+
+# Utilities
+pydantic-settings==2.6.1
+python-dotenv==1.0.1
+tiktoken==0.8.0
+langchain-experimental==0.3.3
