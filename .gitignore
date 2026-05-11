@@ -44,3 +44,10 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+
+# Local Qdrant storage
+backend/local_qdrant_storage/
+
+# Temp debug scripts
+backend/list_models.py
+backend/test_dim.py

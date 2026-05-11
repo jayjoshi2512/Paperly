@@ -1,7 +1,9 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 import logging
+import traceback
 
 from app.database import AsyncSessionLocal
 from sqlalchemy import select
@@ -63,6 +65,21 @@ app.include_router(docs_router)
 app.include_router(chat_router)
 app.include_router(eval_router)
 app.include_router(admin_router)
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """Catch-all handler that ensures CORS headers are always present."""
+    logger.error(f"Unhandled exception on {request.method} {request.url}: {exc}")
+    logger.error(traceback.format_exc())
+    return JSONResponse(
+        status_code=500,
+        content={"detail": str(exc), "type": type(exc).__name__},
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "*",
+            "Access-Control-Allow-Headers": "*",
+        }
+    )
 
 @app.get("/health", tags=["health"])
 async def health_check():

@@ -1,47 +1,66 @@
 import asyncio
 from typing import List
-import google.generativeai as genai
-from tenacity import retry, stop_after_attempt, wait_exponential
+import httpx
 from app.config import settings
 
-# Configure API key
-genai.configure(api_key=settings.GEMINI_API_KEY)
+# This API key only supports v1beta embedding models
+_EMBED_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent"
+_BATCH_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:batchEmbedContents"
+
 
 class GeminiEmbedder:
     def __init__(self):
-        self.model = "models/text-embedding-004"
+        self._api_key = settings.GEMINI_API_KEY
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
     async def embed_text(self, text: str) -> List[float]:
-        """Embed a single text with retry."""
-        result = genai.embed_content(
-            model=self.model,
-            content=text,
-            task_type="retrieval_document"
-        )
-        return result['embedding']
+        """Embed a single text via direct REST API."""
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.post(
+                _EMBED_URL,
+                headers={"x-goog-api-key": self._api_key},
+                json={
+                    "model": "models/gemini-embedding-001",
+                    "content": {"parts": [{"text": text}]}
+                }
+            )
+            if not resp.is_success:
+                raise RuntimeError(
+                    f"Gemini embed_text failed ({resp.status_code}): {resp.text}"
+                )
+            return resp.json()["embedding"]["values"]
 
     async def embed_batch(self, texts: List[str]) -> List[List[float]]:
-        """Batch embed with rate limiting (max 100/call)."""
+        """Batch embed texts."""
         all_embeddings = []
         batch_size = 100
-        
+
         for i in range(0, len(texts), batch_size):
             batch = texts[i:i + batch_size]
-            embeddings = await self._embed_batch_internal(batch)
-            all_embeddings.extend(embeddings)
+            requests_payload = [
+                {
+                    "model": "models/gemini-embedding-001",
+                    "content": {"parts": [{"text": t}]}
+                }
+                for t in batch
+            ]
+            async with httpx.AsyncClient(timeout=60.0) as client:
+                resp = await client.post(
+                    _BATCH_URL,
+                    headers={"x-goog-api-key": self._api_key},
+                    json={"requests": requests_payload}
+                )
+                if not resp.is_success:
+                    raise RuntimeError(
+                        f"Gemini embed_batch failed ({resp.status_code}): {resp.text}"
+                    )
+                data = resp.json()
+                embeddings = [e["values"] for e in data["embeddings"]]
+                all_embeddings.extend(embeddings)
+
             if i + batch_size < len(texts):
-                await asyncio.sleep(0.1) # 100ms delay between batches
-                
+                await asyncio.sleep(0.1)
+
         return all_embeddings
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
-    async def _embed_batch_internal(self, texts: List[str]) -> List[List[float]]:
-        result = genai.embed_content(
-            model=self.model,
-            content=texts,
-            task_type="retrieval_document"
-        )
-        return result['embedding']
 
 embedder = GeminiEmbedder()

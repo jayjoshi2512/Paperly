@@ -48,9 +48,11 @@ export default function Chat() {
                 {msg.role === "user" ? (
                   msg.content
                 ) : (
-                  <Markdown className="prose prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-gray-800 prose-pre:text-gray-100">
-                    {msg.content}
-                  </Markdown>
+                  <div className="prose prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-gray-800 prose-pre:text-gray-100">
+                    <Markdown>
+                      {msg.content}
+                    </Markdown>
+                  </div>
                 )}
               </div>
             </div>

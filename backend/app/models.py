@@ -74,7 +74,6 @@ class Chunk(Base):
     page_number = Column(Integer)
     token_count = Column(Integer)
     chunk_text = Column(Text, nullable=False)
-    created_at = Column(DateTime, nullable=False, server_default=text("CURRENT_TIMESTAMP"))
 
     document = relationship("Document", back_populates="chunks")
 

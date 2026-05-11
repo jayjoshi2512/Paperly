@@ -106,7 +106,14 @@ export default function Documents() {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 capitalize">{doc.chunking_strategy}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{doc.chunk_count || '-'}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <button onClick={() => deleteDocument(doc.id)} className="text-gray-400 hover:text-red-600 transition-colors p-2 hover:bg-red-50 rounded-lg">
+                  <button onClick={async () => {
+                    if (!window.confirm(`Delete "${doc.filename}"? This cannot be undone.`)) return;
+                    try {
+                      await deleteDocument(doc.id);
+                    } catch (err) {
+                      alert("Delete failed: " + err.message);
+                    }
+                  }} className="text-gray-400 hover:text-red-600 transition-colors p-2 hover:bg-red-50 rounded-lg">
                     <Trash2 size={18} />
                   </button>
                 </td>
