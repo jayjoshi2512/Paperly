@@ -9,6 +9,9 @@ from app.models import Chunk, Document
 
 from app.auth.router import router as auth_router
 from app.documents.router import router as docs_router
+from app.chat.router import router as chat_router
+from app.eval.router import router as eval_router
+from app.admin.router import router as admin_router
 from app.rag.bm25_index import bm25_manager
 
 logger = logging.getLogger(__name__)
@@ -57,6 +60,9 @@ app.add_middleware(
 # Register routers
 app.include_router(auth_router)
 app.include_router(docs_router)
+app.include_router(chat_router)
+app.include_router(eval_router)
+app.include_router(admin_router)
 
 @app.get("/health", tags=["health"])
 async def health_check():

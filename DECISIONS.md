@@ -27,3 +27,10 @@
 **Context:** Need to determine added/removed/modified chunks when a document is re-uploaded.
 **Decision:** Extract all old chunks from DB and use Python's built-in `difflib.SequenceMatcher` to compare with newly generated chunks before inserting to DB.
 **Consequences:** CPU-bound diffing on ingest, which scales perfectly fine for typical corporate PDFs. Avoids complex database-level triggers or separate differ services.
+
+## ADR-005: KMeans for Gap Detection
+**Date:** 2026-05-11
+**Status:** Accepted
+**Context:** Need a simple, fast way to cluster similar unanswered queries.
+**Decision:** Embed unanswered queries via Gemini and use scikit-learn's `KMeans` with automatic `k` derivation (capped at 5). Let Gemini generate a title for each resulting cluster.
+**Consequences:** Fast local clustering that effectively groups semantic gaps, giving admins actionable document creation ideas.

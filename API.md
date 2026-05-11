@@ -110,3 +110,57 @@
 **Auth required:** Yes
 **Response 200:** `DiffResponse`
 **Errors:** 404 no diff available.
+
+## Chat
+
+### POST /chat/query
+**Description:** Non-streaming RAG query endpoint. Orchestrates hybrid search, reranking, and generation.
+**Auth required:** Yes
+**Request body:** `{"query": "What is our leave policy?"}`
+**Response 200:** `ChatResponse` with `query_id` and `answer`.
+
+### POST /chat/stream
+**Description:** Streaming SSE RAG query.
+**Auth required:** Yes
+**Request body:** `{"query": "What is our leave policy?"}`
+**Response 200:** Server-Sent Events stream.
+
+### GET /chat/{id}/trace
+**Description:** Get full retrieval trace and audit log for a query.
+**Auth required:** Yes
+**Response 200:** `TraceResponse` with scores, chunks, latency, and whether it was answered.
+
+## Evaluation
+
+### POST /eval/run
+**Description:** Run RAGAS evaluation on recent queries.
+**Auth required:** Yes
+**Response 200:** Aggregate and per-query scores.
+
+### GET /eval/scores
+**Description:** Fetch evaluation scores.
+**Auth required:** Yes
+**Response 200:** List of scores.
+
+### GET /eval/gaps
+**Description:** Fetch knowledge gap clusters.
+**Auth required:** Yes
+**Response 200:** List of `GapCluster`
+
+## Admin
+
+### GET /admin/users
+**Description:** List all users in the workspace.
+**Auth required:** Yes (Admin role)
+**Response 200:** List of users.
+
+### POST /admin/invite
+**Description:** Create a new user account without email flow.
+**Auth required:** Yes (Admin role)
+**Request body:** `{"email": "..."}`
+**Response 200:** Invite success message with default password.
+
+### GET /admin/stats
+**Description:** Usage stats for the workspace.
+**Auth required:** Yes
+**Response 200:** `StatsResponse` (totals and top questions).

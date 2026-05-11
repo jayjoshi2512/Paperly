@@ -43,12 +43,12 @@
 - [x] Update TASKS.md, PROGRESS.md, API.md, DECISIONS.md
 
 ## Phase 3: Differentiated Features
-- [ ] Write backend/app/chat/schemas.py, service.py, router.py
-- [ ] Write backend/app/eval/ragas_eval.py
-- [ ] Write backend/app/eval/gap_detector.py
-- [ ] Write backend/app/eval/router.py
-- [ ] Write backend/app/admin/schemas.py and router.py
-- [ ] Update TASKS.md, PROGRESS.md, API.md, DECISIONS.md
+- [x] Write backend/app/chat/schemas.py, service.py, router.py
+- [x] Write backend/app/eval/ragas_eval.py
+- [x] Write backend/app/eval/gap_detector.py
+- [x] Write backend/app/eval/router.py
+- [x] Write backend/app/admin/schemas.py and router.py
+- [x] Update TASKS.md, PROGRESS.md, API.md, DECISIONS.md
 
 ## Phase 4: Frontend
 - [ ] Scaffold Vite + React + TailwindCSS project

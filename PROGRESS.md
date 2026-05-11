@@ -45,3 +45,20 @@
 - None.
 
 **Next:** Phase 3 — Differentiated Features (Chat orchestration, Eval, Admin)
+
+## [2026-05-11] Phase 3 Complete — Differentiated Features
+**Built:**
+- chat/schemas.py, service.py, router.py: Full orchestration of RAG pipeline, async answer streaming, and retrieval trace logging.
+- eval/ragas_eval.py: Integration with RAGAS for evaluation of faithfulness and relevancy metrics based on stored queries.
+- eval/gap_detector.py: Unanswered query clustering using scikit-learn KMeans, and title generation via Gemini for actionable gap insights.
+- eval/router.py: Endpoints to run evaluations and fetch scores/gaps.
+- admin/schemas.py, router.py: Admin workspace usage stats, query volumes, top questions, and user invites.
+
+**Decisions made:**
+- Used KMeans with a capped `k=5` for gap clustering to maintain cluster cohesion, dynamically adjusting if fewer queries are available.
+- Dummy ground truths used for context recall/precision in RAGAS due to zero-shot unlabelled system scope. Primary evaluation focuses on faithfulness and relevancy.
+
+**Blockers hit:**
+- None.
+
+**Next:** Phase 4 — Frontend (React App)
