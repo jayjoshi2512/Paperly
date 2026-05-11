@@ -84,3 +84,18 @@
 - None.
 
 **Next:** Complete Portfolio Deliverables.
+
+## [2026-05-11] Phase 5 Complete — Deployment & Finalization
+**Built:**
+- Finalized `README.md` with complete local setup instructions (XAMPP + local python/node) and production deployment instructions.
+- Confirmed `docker-compose.yml` and `nginx.conf` readiness.
+- Completed all task tracking files.
+
+**Deployment Runbook:**
+1. **Local Dev:** Start XAMPP MySQL -> Run Qdrant docker container -> Run `uvicorn app.main:app --reload` -> Run `npm run dev` in frontend.
+2. **Production:** Define `.env` -> Ensure VPS MySQL is running -> Run `docker-compose up --build -d` -> Nginx handles reverse proxying on port 80.
+
+**Blockers hit:**
+- None. Project is ready for portfolio submission.
+
+**Next:** Final Handover.

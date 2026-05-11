@@ -66,8 +66,8 @@
 - [x] Update TASKS.md, PROGRESS.md
 
 ## Phase 5: Deployment & Final Docs
-- [ ] Finalize docker-compose.yml
-- [ ] Finalize nginx.conf
-- [ ] Write deployment runbook in PROGRESS.md
-- [ ] Write README.md
-- [ ] Final update to tracking files
+- [x] Finalize docker-compose.yml
+- [x] Finalize nginx.conf
+- [x] Write deployment runbook in PROGRESS.md
+- [x] Write README.md
+- [x] Final update to tracking files
