@@ -1,18 +1,19 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from passlib.context import CryptContext
+
 from fastapi import HTTPException, status
 from app.models import User, Workspace
 from app.auth.schemas import RegisterRequest, LoginRequest
 from app.auth.jwt import create_access_token, verify_token
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+import bcrypt
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
 
 def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
 
 async def register_user(db: AsyncSession, request: RegisterRequest) -> tuple[User, Workspace]:
     # Check if user exists

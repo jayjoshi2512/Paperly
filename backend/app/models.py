@@ -1,6 +1,7 @@
 from __future__ import annotations
 import enum
 from datetime import datetime
+import uuid
 from sqlalchemy import Column, String, Integer, Float, Boolean, Text, DateTime, ForeignKey, Enum, JSON, text
 from sqlalchemy.orm import relationship
 from app.database import Base
@@ -22,7 +23,7 @@ class ChunkingStrategyEnum(str, enum.Enum):
 class Workspace(Base):
     __tablename__ = "workspaces"
 
-    id = Column(String(36), primary_key=True, server_default=text("(UUID())"))
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     name = Column(String(255), nullable=False)
     created_at = Column(DateTime, nullable=False, server_default=text("CURRENT_TIMESTAMP"))
 
@@ -33,7 +34,7 @@ class Workspace(Base):
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(String(36), primary_key=True, server_default=text("(UUID())"))
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     workspace_id = Column(String(36), ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False)
     email = Column(String(255), unique=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
@@ -47,7 +48,7 @@ class User(Base):
 class Document(Base):
     __tablename__ = "documents"
 
-    id = Column(String(36), primary_key=True, server_default=text("(UUID())"))
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     workspace_id = Column(String(36), ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True)
     uploaded_by = Column(String(36), ForeignKey("users.id"), nullable=False)
     filename = Column(String(500), nullable=False)
@@ -66,7 +67,7 @@ class Document(Base):
 class Chunk(Base):
     __tablename__ = "chunks"
 
-    id = Column(String(36), primary_key=True, server_default=text("(UUID())"))
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     document_id = Column(String(36), ForeignKey("documents.id", ondelete="CASCADE"), nullable=False, index=True)
     qdrant_point_id = Column(String(36), nullable=False)
     chunk_index = Column(Integer, nullable=False)
@@ -80,7 +81,7 @@ class Chunk(Base):
 class Query(Base):
     __tablename__ = "queries"
 
-    id = Column(String(36), primary_key=True, server_default=text("(UUID())"))
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     workspace_id = Column(String(36), ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False)
     user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
     query_text = Column(Text, nullable=False)
@@ -98,7 +99,7 @@ class Query(Base):
 class UnansweredQuery(Base):
     __tablename__ = "unanswered_queries"
 
-    id = Column(String(36), primary_key=True, server_default=text("(UUID())"))
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     workspace_id = Column(String(36), ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True)
     query_text = Column(Text, nullable=False)
     cluster_label = Column(String(255))
@@ -107,7 +108,7 @@ class UnansweredQuery(Base):
 class DocumentDiff(Base):
     __tablename__ = "document_diffs"
 
-    id = Column(String(36), primary_key=True, server_default=text("(UUID())"))
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     document_id = Column(String(36), ForeignKey("documents.id", ondelete="CASCADE"), nullable=False)
     from_version = Column(Integer, nullable=False)
     to_version = Column(Integer, nullable=False)
