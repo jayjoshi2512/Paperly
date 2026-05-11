@@ -51,19 +51,19 @@
 - [x] Update TASKS.md, PROGRESS.md, API.md, DECISIONS.md
 
 ## Phase 4: Frontend
-- [ ] Scaffold Vite + React + TailwindCSS project
-- [ ] Write frontend/src/api/client.js
-- [ ] Write frontend/src/hooks/useAuth.js
-- [ ] Write frontend/src/hooks/useDocuments.js
-- [ ] Write frontend/src/hooks/useStreamingChat.js
-- [ ] Write frontend/src/pages/Login.jsx
-- [ ] Write frontend/src/pages/Documents.jsx
-- [ ] Write frontend/src/pages/Chat.jsx
-- [ ] Write frontend/src/pages/EvalDashboard.jsx
-- [ ] Write frontend/src/pages/Dashboard.jsx
-- [ ] Write frontend/src/components/ChatMessage.jsx, SourcePanel.jsx, DocUploader.jsx, ScoreCard.jsx, GapAlert.jsx
-- [ ] Write frontend/Dockerfile
-- [ ] Update TASKS.md, PROGRESS.md
+- [x] Scaffold Vite + React + TailwindCSS project
+- [x] Write frontend/src/api/client.js
+- [x] Write frontend/src/hooks/useAuth.js
+- [x] Write frontend/src/hooks/useDocuments.js
+- [x] Write frontend/src/hooks/useStreamingChat.js
+- [x] Write frontend/src/pages/Login.jsx
+- [x] Write frontend/src/pages/Documents.jsx
+- [x] Write frontend/src/pages/Chat.jsx
+- [x] Write frontend/src/pages/EvalDashboard.jsx
+- [x] Write frontend/src/pages/Dashboard.jsx
+- [x] Write frontend/src/components/ChatMessage.jsx, SourcePanel.jsx, DocUploader.jsx, ScoreCard.jsx, GapAlert.jsx
+- [x] Write frontend/Dockerfile
+- [x] Update TASKS.md, PROGRESS.md
 
 ## Phase 5: Deployment & Final Docs
 - [ ] Finalize docker-compose.yml

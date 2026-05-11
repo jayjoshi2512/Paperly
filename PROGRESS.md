@@ -62,3 +62,25 @@
 - None.
 
 **Next:** Phase 4 — Frontend (React App)
+
+## [2026-05-11] Phase 4 Complete — Frontend
+**Built:**
+- Vite + React scaffolded.
+- api/client.js: Fetch wrapper with Auth Bearer injection.
+- Hooks: useAuth (JWT logic), useDocuments (CRUD logic), useStreamingChat (SSE parsing logic).
+- Layout: Sidebar navigation with Lucide icons.
+- Pages: 
+  - Login: Toggle between sign in and register workspace.
+  - Chat: Render Markdown, stream chunks in real-time, smooth scrolling.
+  - Documents: Upload with strategy select, table view of chunk counts and status.
+  - EvalDashboard: Combined admin usage stats (docs, queries, gaps) and RAGAS score viewer.
+
+**Decisions made:**
+- Used `fetch` with standard SSE decoding instead of heavy libraries.
+- React-Markdown used for rendering Gemini outputs.
+- Direct connection to `localhost:8000` via CORS to simplify dev environment setup.
+
+**Blockers hit:**
+- None.
+
+**Next:** Complete Portfolio Deliverables.
