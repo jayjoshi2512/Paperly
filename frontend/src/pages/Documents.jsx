@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useDocuments } from "../hooks/useDocuments";
-import { Upload, Trash2, FileText, FilePdf, RefreshCw } from "lucide-react";
+import { Upload, Trash2, FileText, RefreshCw } from "lucide-react";
 
 export default function Documents() {
   const { documents, loading, loadDocuments, uploadDocument, deleteDocument } = useDocuments();
