@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useDocuments } from "../hooks/useDocuments";
-import { Upload, Trash2, FileText, RefreshCw, FileType } from "lucide-react";
+import { Trash2, FileText, RefreshCw, FileType, AlertTriangle, X } from "lucide-react";
 import styles from "./Documents.module.css";
 
 function getFileExt(filename) {
@@ -22,73 +22,28 @@ function DocIcon({ filename }) {
 
 export default function Documents() {
   const { documents, loading, loadDocuments, uploadDocument, deleteDocument } = useDocuments();
-  const [file, setFile] = useState(null);
-  const [strategy, setStrategy] = useState("recursive");
-  const [uploading, setUploading] = useState(false);
+  const [docToDelete, setDocToDelete] = useState(null);
+  const [deleteError, setDeleteError] = useState(null);
 
-  const handleUpload = async (e) => {
-    e.preventDefault();
-    if (!file) return;
-    setUploading(true);
+  const confirmDelete = async () => {
+    if (!docToDelete) return;
     try {
-      await uploadDocument(file, strategy);
-      setFile(null);
-      document.getElementById("file-upload").value = "";
+      await deleteDocument(docToDelete.id);
+      setDocToDelete(null);
+      setDeleteError(null);
     } catch (err) {
-      alert("Upload failed: " + err.message);
-    } finally {
-      setUploading(false);
+      setDeleteError(err.message);
     }
   };
 
   return (
     <div className={styles.page}>
       <div className={styles.header}>
-        <h2 className={styles.title}>Knowledge Base</h2>
+        <h2 className={styles.title}>Data Sources</h2>
         <button onClick={loadDocuments} className={styles.refreshBtn}>
           <RefreshCw size={14} />
           <span>Refresh</span>
         </button>
-      </div>
-
-      <div className={styles.uploadCard}>
-        <h3 className={styles.uploadTitle}>Upload Document</h3>
-        <form onSubmit={handleUpload} className={styles.uploadForm}>
-          <div className={styles.fieldGroup}>
-            <label className={styles.fieldLabel}>File (PDF or DOCX)</label>
-            <input
-              id="file-upload"
-              type="file"
-              accept=".pdf,.docx"
-              onChange={(e) => setFile(e.target.files[0])}
-              className={styles.fileInput}
-            />
-          </div>
-          <div className={styles.fieldGroup} style={{ maxWidth: 200 }}>
-            <label className={styles.fieldLabel}>Chunking</label>
-            <select
-              value={strategy}
-              onChange={(e) => setStrategy(e.target.value)}
-              className={styles.select}
-            >
-              <option value="recursive">Recursive</option>
-              <option value="fixed">Fixed Size</option>
-              <option value="semantic">Semantic</option>
-            </select>
-          </div>
-          <button
-            type="submit"
-            disabled={!file || uploading}
-            className={styles.uploadBtn}
-          >
-            {uploading ? (
-              <RefreshCw size={16} className={styles.spinner} />
-            ) : (
-              <Upload size={16} />
-            )}
-            <span>{uploading ? "Uploading…" : "Upload"}</span>
-          </button>
-        </form>
       </div>
 
       <div className={styles.tableCard}>
@@ -133,14 +88,7 @@ export default function Documents() {
                 <td>{doc.chunk_count || "—"}</td>
                 <td className={styles.actionsCell}>
                   <button
-                    onClick={async () => {
-                      if (!window.confirm(`Delete "${doc.filename}"? This cannot be undone.`)) return;
-                      try {
-                        await deleteDocument(doc.id);
-                      } catch (err) {
-                        alert("Delete failed: " + err.message);
-                      }
-                    }}
+                    onClick={() => setDocToDelete(doc)}
                     className={styles.deleteBtn}
                   >
                     <Trash2 size={16} />
@@ -163,6 +111,30 @@ export default function Documents() {
           </tbody>
         </table>
       </div>
+
+      {docToDelete && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modal}>
+            <div className={styles.modalHeader}>
+              <div className={styles.modalTitle}>
+                <AlertTriangle size={20} className={styles.modalIcon} />
+                Confirm Deletion
+              </div>
+              <button onClick={() => setDocToDelete(null)} className={styles.closeBtn}>
+                <X size={18} />
+              </button>
+            </div>
+            <div className={styles.modalBody}>
+              Are you sure you want to delete <strong>{docToDelete.filename}</strong>? This action cannot be undone.
+              {deleteError && <div className={styles.modalError}>{deleteError}</div>}
+            </div>
+            <div className={styles.modalFooter}>
+              <button onClick={() => setDocToDelete(null)} className={styles.cancelBtn}>Cancel</button>
+              <button onClick={confirmDelete} className={styles.confirmBtn}>Delete Document</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

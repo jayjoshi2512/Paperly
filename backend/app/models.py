@@ -83,6 +83,7 @@ class Query(Base):
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     workspace_id = Column(String(36), ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False)
     user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
+    session_id = Column(String(36), index=True)
     query_text = Column(Text, nullable=False)
     answer_text = Column(Text)
     retrieved_chunk_ids = Column(JSON)

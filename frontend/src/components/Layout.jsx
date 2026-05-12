@@ -1,12 +1,14 @@
 import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-import { MessageSquare, FileText, BarChart2, LogOut } from "lucide-react";
+import { useStreamingChat } from "../hooks/useStreamingChat";
+import { MessageSquare, FileText, BarChart2, LogOut, Plus } from "lucide-react";
 import styles from "./Layout.module.css";
 
 export default function Layout() {
   const { logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const chatState = useStreamingChat();
 
   const handleLogout = () => {
     logout();
@@ -36,15 +38,43 @@ export default function Layout() {
             className={`${styles.navItem} ${isActive("/documents") ? styles.active : ""}`}
           >
             <FileText className={styles.navIcon} />
-            <span>Knowledge Base</span>
+            <span>Data Sources</span>
           </Link>
           <Link
             to="/eval"
             className={`${styles.navItem} ${isActive("/eval") ? styles.active : ""}`}
           >
             <BarChart2 className={styles.navIcon} />
-            <span>Analytics</span>
+            <span>Insights</span>
           </Link>
+          
+          <div className={styles.divider} />
+          
+          <button 
+            className={styles.newChatBtn} 
+            onClick={() => {
+              chatState.startNewSession();
+              if (!isActive("/chat")) navigate("/chat");
+            }}
+          >
+            <Plus size={16} /> New Chat
+          </button>
+          
+          <div className={styles.sessionList}>
+            {chatState.sessions.map(s => (
+              <button 
+                key={s.id} 
+                className={`${styles.sessionItem} ${chatState.currentSessionId === s.id ? styles.active : ""}`}
+                onClick={() => {
+                  chatState.switchSession(s.id);
+                  if (!isActive("/chat")) navigate("/chat");
+                }}
+                title={s.title}
+              >
+                {s.title}
+              </button>
+            ))}
+          </div>
         </nav>
 
         <div className={styles.sidebarFooter}>
@@ -56,7 +86,7 @@ export default function Layout() {
       </aside>
 
       <main className={styles.main}>
-        <Outlet />
+        <Outlet context={chatState} />
       </main>
     </div>
   );

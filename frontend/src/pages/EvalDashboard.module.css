@@ -25,7 +25,7 @@
   align-items: center;
   gap: var(--space-sm);
   padding: var(--space-md) var(--space-xl);
-  background: linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%);
+  background: var(--color-accent);
   color: white;
   font-weight: 600;
   font-size: var(--font-sm);

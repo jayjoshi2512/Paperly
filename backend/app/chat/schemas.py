@@ -4,6 +4,7 @@ from datetime import datetime
 
 class ChatRequest(BaseModel):
     query: str
+    session_id: Optional[str] = None
 
 class ChatResponse(BaseModel):
     query_id: str
@@ -26,3 +27,10 @@ class TraceResponse(BaseModel):
     latency_ms: int
     was_answered: bool
     chunks: List[RetrievedChunkInfo]
+
+class ChatHistoryItem(BaseModel):
+    id: str
+    session_id: Optional[str]
+    query_text: str
+    answer_text: Optional[str]
+    created_at: datetime

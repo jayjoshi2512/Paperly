@@ -9,6 +9,7 @@ async def fix():
         "ALTER TABLE unanswered_queries ADD COLUMN IF NOT EXISTS cluster_label VARCHAR(255)",
         "ALTER TABLE unanswered_queries ADD COLUMN IF NOT EXISTS created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP",
         "ALTER TABLE document_diffs ADD COLUMN IF NOT EXISTS created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP",
+        "ALTER TABLE queries ADD COLUMN IF NOT EXISTS session_id VARCHAR(36)",
     ]
 
     for sql in fixes:

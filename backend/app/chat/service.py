@@ -22,7 +22,8 @@ async def _save_trace(
     query_text: str,
     answer_text: str,
     chunks: list[RerankedChunk],
-    latency_ms: int
+    latency_ms: int,
+    session_id: str = None
 ) -> Query:
     was_answered = True
     if "I don't have information about this" in answer_text or "I don't have information" in answer_text:
@@ -44,6 +45,7 @@ async def _save_trace(
     db_query = Query(
         workspace_id=workspace_id,
         user_id=user_id,
+        session_id=session_id,
         query_text=query_text,
         answer_text=answer_text,
         retrieved_chunk_ids=chunk_data,
@@ -71,7 +73,7 @@ async def process_query(db: AsyncSession, request: ChatRequest, workspace_id: st
     answer = await generator.generate(request.query, reranked_chunks)
     
     latency_ms = int((time.time() - start_time) * 1000)
-    db_query = await _save_trace(db, workspace_id, user_id, request.query, answer, reranked_chunks, latency_ms)
+    db_query = await _save_trace(db, workspace_id, user_id, request.query, answer, reranked_chunks, latency_ms, request.session_id)
     
     return {
         "query_id": db_query.id,
@@ -94,7 +96,7 @@ async def process_query_stream(db: AsyncSession, request: ChatRequest, workspace
     latency_ms = int((time.time() - start_time) * 1000)
 
     try:
-        await _save_trace(db, workspace_id, user_id, request.query, answer_text, reranked_chunks, latency_ms)
+        await _save_trace(db, workspace_id, user_id, request.query, answer_text, reranked_chunks, latency_ms, request.session_id)
     except Exception as e:
         logger.warning(f"Failed to save query trace (non-fatal): {e}")
         await db.rollback()

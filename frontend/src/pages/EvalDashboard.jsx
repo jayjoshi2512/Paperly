@@ -55,10 +55,15 @@ export default function EvalDashboard() {
   return (
     <div className={styles.page}>
       <div className={styles.header}>
-        <h2 className={styles.title}>Analytics</h2>
+        <div>
+          <h2 className={styles.title}>Insights & Performance</h2>
+          <p style={{ color: "var(--color-text-muted)", fontSize: "var(--font-sm)", marginTop: "4px" }}>
+            This dashboard helps you identify missing knowledge in your documents and tracks the AI's answer accuracy.
+          </p>
+        </div>
         <button onClick={runEval} className={styles.evalBtn}>
           <Play size={16} />
-          <span>Run RAGAS</span>
+          <span>Run Diagnostics</span>
         </button>
       </div>
 
@@ -105,7 +110,7 @@ export default function EvalDashboard() {
         <div className={styles.panel}>
           <div className={styles.panelHeader}>
             <div className={`${styles.panelDot} ${styles.green}`} />
-            <h3 className={styles.panelTitle}>RAGAS Scores</h3>
+            <h3 className={styles.panelTitle}>AI Accuracy Scores</h3>
           </div>
           {scores.length === 0 ? (
             <p className={styles.emptyMsg}>No scores yet. Run an evaluation.</p>
