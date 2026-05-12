@@ -18,10 +18,11 @@ async def upload_document(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Upload a PDF document. File size limit enforced by Nginx (50MB).
+    Upload a PDF or DOCX document. File size limit enforced by Nginx (50MB).
     """
-    if not file.filename.lower().endswith(".pdf"):
-        raise HTTPException(status_code=400, detail="Only PDF files are supported")
+    allowed = (".pdf", ".docx", ".doc")
+    if not any(file.filename.lower().endswith(ext) for ext in allowed):
+        raise HTTPException(status_code=400, detail="Only PDF and DOCX files are supported")
         
     doc = await service.upload_document(
         db=db,

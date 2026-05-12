@@ -1,88 +1,157 @@
 import { useState, useRef, useEffect } from "react";
 import { useStreamingChat } from "../hooks/useStreamingChat";
-import { Send, Bot, User } from "lucide-react";
+import { Send, Bot, User, Sparkles, Search, Database, Brain, MessageSquare } from "lucide-react";
 import Markdown from "react-markdown";
+import styles from "./Chat.module.css";
+
+const PHASE_META = {
+  searching: { icon: Search, label: "Searching knowledge base" },
+  retrieving: { icon: Database, label: "Retrieving context" },
+  thinking: { icon: Brain, label: "Analyzing documents" },
+  answering: { icon: MessageSquare, label: "Generating answer" },
+};
+
+const PHASE_ORDER = ["searching", "retrieving", "thinking", "answering"];
+
+function StatusPipeline({ phase }) {
+  const activeIdx = PHASE_ORDER.indexOf(phase);
+
+  return (
+    <div className={styles.statusPipeline}>
+      {PHASE_ORDER.map((step, i) => {
+        let state = "";
+        if (i < activeIdx) state = "done";
+        else if (i === activeIdx) state = "active";
+
+        return (
+          <div key={step} style={{ display: "flex", alignItems: "center", gap: "var(--space-sm)" }}>
+            {i > 0 && <div className={styles.statusSep} />}
+            <div className={`${styles.statusStep} ${state ? styles[state] : ""}`}>
+              <div className={styles.statusDot} />
+              <span>{PHASE_META[step].label}</span>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function TypingDots() {
+  return (
+    <div className={styles.typing}>
+      <div className={styles.typingDot} />
+      <div className={styles.typingDot} />
+      <div className={styles.typingDot} />
+    </div>
+  );
+}
+
+const QUICK_PROMPTS = [
+  "Summarize the key findings",
+  "What are the main topics?",
+  "Compare the documents",
+];
 
 export default function Chat() {
-  const { messages, isStreaming, sendMessage } = useStreamingChat();
+  const { messages, isStreaming, phase, sendMessage } = useStreamingChat();
   const [input, setInput] = useState("");
   const endRef = useRef(null);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, phase]);
 
   const handleSend = (e) => {
     e.preventDefault();
     if (!input.trim() || isStreaming) return;
-    sendMessage(input);
+    sendMessage(input.trim());
     setInput("");
   };
 
+  const handleQuickPrompt = (prompt) => {
+    if (isStreaming) return;
+    sendMessage(prompt);
+  };
+
   return (
-    <div className="flex flex-col h-full bg-white relative">
-      <div className="p-4 border-b flex items-center justify-between shadow-sm z-10 bg-white">
-        <h2 className="text-lg font-semibold text-gray-800">Chat Assistant</h2>
+    <div className={styles.page}>
+      <div className={styles.header}>
+        <Sparkles size={18} style={{ color: "var(--color-accent)" }} />
+        <h2 className={styles.headerTitle}>Chat</h2>
+        <span className={styles.headerBadge}>AI</span>
       </div>
-      
-      <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6">
+
+      <div className={styles.messages}>
         {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full text-gray-500 space-y-4">
-            <div className="bg-blue-50 p-4 rounded-full text-blue-500">
-              <Bot size={40} />
+          <div className={styles.emptyState}>
+            <div className={styles.emptyIcon}>
+              <Bot size={28} />
             </div>
-            <h3 className="text-xl font-medium text-gray-700">How can I help you today?</h3>
-            <p className="text-center max-w-md">
-              Ask me questions about the documents uploaded to your workspace. I will search the knowledge base and provide an answer with citations.
+            <h3 className={styles.emptyTitle}>Ask anything about your documents</h3>
+            <p className={styles.emptyDesc}>
+              I search your uploaded knowledge base and provide answers with source citations.
             </p>
+            <div className={styles.suggestions}>
+              {QUICK_PROMPTS.map((prompt) => (
+                <button
+                  key={prompt}
+                  className={styles.suggestion}
+                  onClick={() => handleQuickPrompt(prompt)}
+                >
+                  {prompt}
+                </button>
+              ))}
+            </div>
           </div>
         )}
-        
+
         {messages.map((msg, i) => (
-          <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-            <div className={`flex space-x-3 max-w-3xl ${msg.role === "user" ? "flex-row-reverse space-x-reverse" : "flex-row"}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1 ${msg.role === "user" ? "bg-blue-100 text-blue-600" : "bg-purple-100 text-purple-600"}`}>
-                {msg.role === "user" ? <User size={16} /> : <Bot size={16} />}
-              </div>
-              <div className={`p-4 rounded-2xl ${msg.role === "user" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-800"}`}>
-                {msg.role === "user" ? (
-                  msg.content
-                ) : (
-                  <div className="prose prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-gray-800 prose-pre:text-gray-100">
-                    <Markdown>
-                      {msg.content}
-                    </Markdown>
-                  </div>
-                )}
-              </div>
+          <div
+            key={i}
+            className={`${styles.message} ${styles[msg.role]}`}
+          >
+            <div className={`${styles.avatar} ${styles[msg.role]}`}>
+              {msg.role === "user" ? <User size={16} /> : <Bot size={16} />}
+            </div>
+            <div className={`${styles.bubble} ${styles[msg.role]}`}>
+              {msg.role === "user" ? (
+                msg.content
+              ) : msg.content ? (
+                <Markdown>{msg.content}</Markdown>
+              ) : phase && phase !== "answering" ? (
+                <StatusPipeline phase={phase} />
+              ) : (
+                <TypingDots />
+              )}
             </div>
           </div>
         ))}
         <div ref={endRef} />
       </div>
 
-      <div className="p-4 bg-white border-t">
-        <div className="max-w-4xl mx-auto">
-          <form onSubmit={handleSend} className="relative flex items-center">
+      <div className={styles.inputArea}>
+        <div className={styles.inputWrapper}>
+          <form onSubmit={handleSend} className={styles.inputForm}>
             <input
               type="text"
-              className="w-full border-2 border-gray-200 p-4 pr-14 rounded-full focus:outline-none focus:border-blue-500 transition-colors shadow-sm"
-              placeholder="Ask a question about your documents..."
+              className={styles.chatInput}
+              placeholder="Ask a question about your documents…"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               disabled={isStreaming}
             />
             <button
               type="submit"
-              className="absolute right-2 bg-blue-600 text-white p-2.5 rounded-full hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className={styles.sendBtn}
               disabled={isStreaming || !input.trim()}
             >
-              <Send size={18} className={isStreaming ? "animate-pulse" : ""} />
+              <Send size={18} />
             </button>
           </form>
-          <div className="text-center mt-2 text-xs text-gray-400">
-            Paperly can make mistakes. Consider verifying important information.
-          </div>
+          <p className={styles.disclaimer}>
+            Paperly may make mistakes. Verify important information.
+          </p>
         </div>
       </div>
     </div>

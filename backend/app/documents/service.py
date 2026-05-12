@@ -7,7 +7,7 @@ from qdrant_client.http import models as qmodels
 from fastapi import UploadFile, HTTPException
 
 from app.models import Document, Chunk, DocumentDiff, DocStatusEnum
-from app.documents.extractor import extract_text_from_pdf, ExtractionError
+from app.documents.extractor import extract_text, ExtractionError
 from app.documents.diff import compute_chunk_diff, DiffResult
 from app.vector_store.qdrant_client import qdrant_db
 from app.rag.bm25_index import bm25_manager
@@ -60,7 +60,7 @@ async def upload_document(
 
     try:
         # 2. Extract text
-        pages = extract_text_from_pdf(file_bytes)
+        pages = extract_text(file_bytes, file.filename)
         doc.page_count = len(pages)
         full_text = "\n\n".join(p.text for p in pages)
 

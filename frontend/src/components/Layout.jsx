@@ -1,6 +1,7 @@
 import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { MessageSquare, FileText, BarChart2, LogOut } from "lucide-react";
+import styles from "./Layout.module.css";
 
 export default function Layout() {
   const { logout } = useAuth();
@@ -12,39 +13,49 @@ export default function Layout() {
     navigate("/login");
   };
 
-  const navItemClass = (path) => {
-    const isActive = location.pathname.startsWith(path);
-    return `flex items-center space-x-3 p-3 rounded-lg transition-colors ${isActive ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`;
-  };
+  const isActive = (path) => location.pathname.startsWith(path);
 
   return (
-    <div className="flex h-screen bg-white">
-      <aside className="w-64 bg-gray-50 border-r flex flex-col">
-        <div className="p-6">
-          <h1 className="font-bold text-2xl text-blue-700 tracking-tight">Paperly</h1>
+    <div className={styles.shell}>
+      <aside className={styles.sidebar}>
+        <div className={styles.brand}>
+          <div className={styles.brandIcon}>P</div>
+          <span className={styles.brandName}>Paperly</span>
         </div>
-        <nav className="flex-1 px-4 space-y-1">
-          <Link to="/chat" className={navItemClass("/chat")}>
-            <MessageSquare size={20} />
-            <span>Chat Assistant</span>
+
+        <nav className={styles.nav}>
+          <Link
+            to="/chat"
+            className={`${styles.navItem} ${isActive("/chat") ? styles.active : ""}`}
+          >
+            <MessageSquare className={styles.navIcon} />
+            <span>Chat</span>
           </Link>
-          <Link to="/documents" className={navItemClass("/documents")}>
-            <FileText size={20} />
+          <Link
+            to="/documents"
+            className={`${styles.navItem} ${isActive("/documents") ? styles.active : ""}`}
+          >
+            <FileText className={styles.navIcon} />
             <span>Knowledge Base</span>
           </Link>
-          <Link to="/eval" className={navItemClass("/eval")}>
-            <BarChart2 size={20} />
-            <span>Dashboard</span>
+          <Link
+            to="/eval"
+            className={`${styles.navItem} ${isActive("/eval") ? styles.active : ""}`}
+          >
+            <BarChart2 className={styles.navIcon} />
+            <span>Analytics</span>
           </Link>
         </nav>
-        <div className="p-4 border-t">
-          <button onClick={handleLogout} className="flex items-center space-x-3 text-gray-600 hover:text-red-600 w-full p-3 rounded-lg hover:bg-red-50 transition-colors">
-            <LogOut size={20} />
-            <span>Logout</span>
+
+        <div className={styles.sidebarFooter}>
+          <button onClick={handleLogout} className={styles.logoutBtn}>
+            <LogOut className={styles.navIcon} />
+            <span>Sign Out</span>
           </button>
         </div>
       </aside>
-      <main className="flex-1 flex flex-col overflow-hidden">
+
+      <main className={styles.main}>
         <Outlet />
       </main>
     </div>

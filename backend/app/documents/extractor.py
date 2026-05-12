@@ -66,3 +66,65 @@ def extract_text_from_pdf(file_bytes: bytes) -> List[PageText]:
             
     doc.close()
     return pages
+
+
+def extract_text_from_docx(file_bytes: bytes) -> List[PageText]:
+    """
+    Extracts text from DOCX bytes.
+    Since DOCX does not have physical pages, we treat each ~3000 chars as a logical page.
+    """
+    from docx import Document as DocxDocument
+
+    if not file_bytes:
+        return []
+
+    try:
+        doc = DocxDocument(io.BytesIO(file_bytes))
+    except Exception:
+        raise ExtractionError("Invalid or corrupt DOCX file")
+
+    full_text = "\n".join(p.text for p in doc.paragraphs if p.text.strip())
+
+    if not full_text.strip():
+        return []
+
+    # Split into logical pages of ~3000 chars at paragraph boundaries
+    pages = []
+    chunk_size = 3000
+    current_chunk = ""
+    page_num = 1
+
+    for line in full_text.split("\n"):
+        if len(current_chunk) + len(line) + 1 > chunk_size and current_chunk:
+            pages.append(PageText(
+                page_number=page_num,
+                text=current_chunk.strip(),
+                char_count=len(current_chunk.strip())
+            ))
+            page_num += 1
+            current_chunk = line
+        else:
+            current_chunk += ("\n" if current_chunk else "") + line
+
+    if current_chunk.strip():
+        pages.append(PageText(
+            page_number=page_num,
+            text=current_chunk.strip(),
+            char_count=len(current_chunk.strip())
+        ))
+
+    return pages
+
+
+def extract_text(file_bytes: bytes, filename: str) -> List[PageText]:
+    """
+    Unified extractor — routes to PDF or DOCX based on filename extension.
+    """
+    ext = (filename or "").rsplit(".", 1)[-1].lower()
+
+    if ext == "pdf":
+        return extract_text_from_pdf(file_bytes)
+    elif ext in ("docx", "doc"):
+        return extract_text_from_docx(file_bytes)
+    else:
+        raise ExtractionError(f"Unsupported file type: .{ext}")

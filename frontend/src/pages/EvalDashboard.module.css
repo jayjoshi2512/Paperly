@@ -1,0 +1,213 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--color-bg);
+  overflow-y: auto;
+  padding: var(--space-2xl);
+  gap: var(--space-xl);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.title {
+  font-size: var(--font-xl);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.evalBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--space-xl);
+  background: linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%);
+  color: white;
+  font-weight: 600;
+  font-size: var(--font-sm);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.evalBtn:hover {
+  box-shadow: 0 0 20px rgba(124, 58, 237, 0.3);
+  transform: translateY(-1px);
+}
+
+/* ─── Stats grid ─── */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-lg);
+}
+
+.statCard {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.statLabel {
+  font-size: var(--font-xs);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.statValue {
+  font-size: var(--font-2xl);
+  font-weight: 700;
+}
+
+.statValue.primary { color: var(--color-text-primary); }
+.statValue.danger { color: var(--color-danger); }
+.statValue.accent { color: var(--color-accent-hover); }
+
+/* ─── Two column panels ─── */
+.panels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-xl);
+}
+
+@media (max-width: 960px) {
+  .panels {
+    grid-template-columns: 1fr;
+  }
+}
+
+.panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-xl);
+}
+
+.panelDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.panelDot.red { background: var(--color-danger); }
+.panelDot.green { background: var(--color-success); }
+
+.panelTitle {
+  font-size: var(--font-md);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  list-style: none;
+}
+
+.listItem {
+  padding: var(--space-md);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  transition: background var(--transition-fast);
+}
+
+.listItem:hover {
+  background: var(--color-surface-hover);
+}
+
+.gapTitle {
+  font-weight: 500;
+  color: var(--color-text-primary);
+  font-size: var(--font-sm);
+  margin-bottom: var(--space-xs);
+}
+
+.gapMeta {
+  font-size: var(--font-xs);
+  color: var(--color-text-muted);
+}
+
+.gapMeta strong {
+  color: var(--color-text-secondary);
+}
+
+.gapQuote {
+  margin-top: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border-left: 2px solid var(--color-danger);
+  background: var(--color-surface-raised);
+  color: var(--color-text-secondary);
+  font-style: italic;
+  font-size: var(--font-xs);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+/* Score item */
+.scoreQuery {
+  font-weight: 500;
+  color: var(--color-text-primary);
+  font-size: var(--font-sm);
+  margin-bottom: var(--space-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scoreMetrics {
+  display: flex;
+  gap: var(--space-xl);
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.metricLabel {
+  font-size: var(--font-xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.metricValue {
+  font-weight: 600;
+  font-size: var(--font-base);
+}
+
+.metricValue.good { color: var(--color-success); }
+.metricValue.ok { color: var(--color-warning); }
+.metricValue.bad { color: var(--color-danger); }
+
+.emptyMsg {
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--font-sm);
+  padding: var(--space-xl);
+  background: var(--color-surface-raised);
+  border-radius: var(--radius-md);
+}
+
+.loading {
+  padding: var(--space-3xl);
+  color: var(--color-text-muted);
+  font-size: var(--font-base);
+}

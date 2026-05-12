@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 import logging
 import traceback
 
-from app.database import AsyncSessionLocal
+from app.database import AsyncSessionLocal, engine
 from sqlalchemy import select
 from app.models import Chunk, Document
 
@@ -41,7 +41,10 @@ async def lifespan(app: FastAPI):
             
     logger.info("BM25 index rebuilt successfully.")
     yield
-    # Cleanup logic if any
+    # Shutdown: dispose engine to properly close all pooled connections
+    logger.info("Disposing database engine...")
+    await engine.dispose()
+    logger.info("Shutdown complete.")
 
 app = FastAPI(
     title="Paperly API",
