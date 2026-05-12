@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     # External APIs
     GEMINI_API_KEY: str = Field(..., description="Google Gemini API Key")
     COHERE_API_KEY: str = Field(..., description="Cohere API Key for reranking")
+    GROQ_API_KEY: str = Field("", description="Groq API Key for fast LLM inference")
     
     # JWT & Auth
     JWT_SECRET: str = Field(..., description="Secret key for JWT encoding")

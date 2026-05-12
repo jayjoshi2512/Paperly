@@ -25,30 +25,40 @@ export const useStreamingChat = () => {
       const reader = response.body.getReader();
       const decoder = new TextDecoder("utf-8");
 
-      let done = false;
-      while (!done) {
-        const { value, done: readerDone } = await reader.read();
-        done = readerDone;
-        if (value) {
-          const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split("\n");
-          for (const line of lines) {
-            if (line.startsWith("data: ")) {
-              const dataStr = line.slice(6);
-              if (dataStr === "[DONE]") {
-                done = true;
-                break;
-              }
-              try {
-                const data = JSON.parse(dataStr);
+      // SSE buffer: accumulate bytes until we have complete lines
+      let buffer = "";
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        // Append new bytes to buffer
+        buffer += decoder.decode(value, { stream: true });
+
+        // Process all complete SSE messages (separated by \n\n)
+        const parts = buffer.split("\n\n");
+        // The last part may be incomplete — keep it in the buffer
+        buffer = parts.pop() ?? "";
+
+        for (const part of parts) {
+          for (const line of part.split("\n")) {
+            if (!line.startsWith("data: ")) continue;
+            const dataStr = line.slice(6).trim();
+            if (dataStr === "[DONE]") break;
+            try {
+              const data = JSON.parse(dataStr);
+              if (data.token) {
                 setMessages((prev) => {
                   const newMsgs = [...prev];
-                  newMsgs[newMsgs.length - 1].content += data.token;
+                  newMsgs[newMsgs.length - 1] = {
+                    ...newMsgs[newMsgs.length - 1],
+                    content: newMsgs[newMsgs.length - 1].content + data.token,
+                  };
                   return newMsgs;
                 });
-              } catch (e) {
-                // ignore JSON parse error
               }
+            } catch {
+              // ignore malformed JSON
             }
           }
         }
@@ -57,7 +67,10 @@ export const useStreamingChat = () => {
       console.error(e);
       setMessages((prev) => {
         const newMsgs = [...prev];
-        newMsgs[newMsgs.length - 1].content = "Error: Failed to fetch response.";
+        newMsgs[newMsgs.length - 1] = {
+          ...newMsgs[newMsgs.length - 1],
+          content: "Error: Failed to fetch response. Please try again.",
+        };
         return newMsgs;
       });
     } finally {

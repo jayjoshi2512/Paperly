@@ -16,6 +16,19 @@ class ScoredPoint(BaseModel):
     text: str
     score: float
 
+def _get_vector_size(info) -> int:
+    """Safely extract vector size from CollectionInfo regardless of API version."""
+    try:
+        vectors = info.config.params.vectors
+        if hasattr(vectors, "size"):
+            return vectors.size  # VectorParams directly
+        elif isinstance(vectors, dict):
+            return list(vectors.values())[0].size  # named vectors dict
+    except Exception:
+        pass
+    return 0  # unknown — force recreate
+
+
 class PaperlyQdrant:
     def __init__(self):
         url = settings.QDRANT_URL
@@ -37,19 +50,33 @@ class PaperlyQdrant:
         return await fn(*args, **kwargs)
 
     async def setup_collection(self):
-        """Creates the collection if it does not exist."""
+        """Creates (or recreates) the collection with correct vector size."""
         if self._collection_ready:
             return
+        target_size = 1024  # Cohere embed-english-v3.0
+
         if self._is_local:
             client = self._sync_client
             collections = await asyncio.to_thread(client.get_collections)
             exists = any(c.name == self.collection_name for c in collections.collections)
+
+            if exists:
+                # Check dimension matches — recreate if stale
+                info = await asyncio.to_thread(client.get_collection, self.collection_name)
+                actual_size = _get_vector_size(info)
+                if actual_size != target_size:
+                    logger.warning(
+                        f"Qdrant collection has size={actual_size}, expected {target_size}. Recreating."
+                    )
+                    await asyncio.to_thread(client.delete_collection, self.collection_name)
+                    exists = False
+
             if not exists:
-                logger.info(f"Creating Qdrant collection: {self.collection_name}")
+                logger.info(f"Creating Qdrant collection '{self.collection_name}' (size={target_size})")
                 await asyncio.to_thread(
                     client.create_collection,
                     collection_name=self.collection_name,
-                    vectors_config=qmodels.VectorParams(size=3072, distance=qmodels.Distance.COSINE)
+                    vectors_config=qmodels.VectorParams(size=target_size, distance=qmodels.Distance.COSINE)
                 )
                 await asyncio.to_thread(
                     client.create_payload_index,
@@ -61,18 +88,31 @@ class PaperlyQdrant:
             client = self._async_client
             collections = await client.get_collections()
             exists = any(c.name == self.collection_name for c in collections.collections)
+
+            if exists:
+                info = await client.get_collection(self.collection_name)
+                actual_size = _get_vector_size(info)
+                if actual_size != target_size:
+                    logger.warning(
+                        f"Qdrant collection has size={actual_size}, expected {target_size}. Recreating."
+                    )
+                    await client.delete_collection(self.collection_name)
+                    exists = False
+
             if not exists:
-                logger.info(f"Creating Qdrant collection: {self.collection_name}")
+                logger.info(f"Creating Qdrant collection '{self.collection_name}' (size={target_size})")
                 await client.create_collection(
                     collection_name=self.collection_name,
-                    vectors_config=qmodels.VectorParams(size=3072, distance=qmodels.Distance.COSINE)
+                    vectors_config=qmodels.VectorParams(size=target_size, distance=qmodels.Distance.COSINE)
                 )
                 await client.create_payload_index(
                     collection_name=self.collection_name,
                     field_name="workspace_id",
                     field_schema=qmodels.PayloadSchemaType.KEYWORD
                 )
+
         self._collection_ready = True
+
 
     async def upsert(self, points: List[qmodels.PointStruct]):
         """Batch upsert points."""

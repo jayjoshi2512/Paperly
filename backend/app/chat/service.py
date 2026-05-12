@@ -92,8 +92,12 @@ async def process_query_stream(db: AsyncSession, request: ChatRequest, workspace
 
     answer_text = "".join(full_answer)
     latency_ms = int((time.time() - start_time) * 1000)
-    
-    await _save_trace(db, workspace_id, user_id, request.query, answer_text, reranked_chunks, latency_ms)
+
+    try:
+        await _save_trace(db, workspace_id, user_id, request.query, answer_text, reranked_chunks, latency_ms)
+    except Exception as e:
+        logger.warning(f"Failed to save query trace (non-fatal): {e}")
+        await db.rollback()
 
 async def get_query_trace(db: AsyncSession, query_id: str, workspace_id: str) -> dict:
     result = await db.execute(select(Query).where(Query.id == query_id, Query.workspace_id == workspace_id))

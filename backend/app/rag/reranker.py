@@ -48,6 +48,7 @@ class CohereReranker:
             reranked.append(RerankedChunk(
                 chunk_id=orig_chunk.chunk_id,
                 document_id=orig_chunk.document_id,
+                filename=orig_chunk.filename,
                 text=orig_chunk.text,
                 page_number=orig_chunk.page_number,
                 dense_score=orig_chunk.dense_score,
