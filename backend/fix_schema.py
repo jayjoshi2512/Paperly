@@ -13,6 +13,12 @@ async def fix():
         "CREATE TABLE IF NOT EXISTS chat_sessions (id VARCHAR(36) PRIMARY KEY, workspace_id VARCHAR(36) NOT NULL, user_id VARCHAR(36) NOT NULL, title VARCHAR(255), summary_state TEXT, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE, FOREIGN KEY (user_id) REFERENCES users(id))",
         "ALTER TABLE chat_sessions ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN NOT NULL DEFAULT FALSE",
         "ALTER TABLE queries ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN NOT NULL DEFAULT FALSE",
+        "ALTER TABLE documents ADD COLUMN IF NOT EXISTS progress_pct TINYINT UNSIGNED NOT NULL DEFAULT 0",
+        "ALTER TABLE documents ADD COLUMN IF NOT EXISTS progress_message VARCHAR(255) NULL",
+        "ALTER TABLE queries ADD COLUMN IF NOT EXISTS feedback ENUM('positive','negative') NULL",
+        "ALTER TABLE queries ADD COLUMN IF NOT EXISTS ground_truth TEXT NULL",
+        "ALTER TABLE queries ADD COLUMN IF NOT EXISTS flagged_for_review TINYINT(1) NOT NULL DEFAULT 0",
+        "ALTER TABLE queries ADD COLUMN IF NOT EXISTS cache_hit TINYINT(1) NOT NULL DEFAULT 0",
     ]
 
     for sql in fixes:

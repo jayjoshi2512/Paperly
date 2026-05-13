@@ -27,7 +27,7 @@ export const useStreamingChat = () => {
           }
           grouped[sid].messages.push({ role: "user", content: item.query_text });
           if (item.answer_text) {
-            grouped[sid].messages.push({ role: "assistant", content: item.answer_text });
+            grouped[sid].messages.push({ role: "assistant", content: item.answer_text, queryId: item.id });
           }
         }
         
@@ -146,6 +146,23 @@ export const useStreamingChat = () => {
                       newMsgs[newMsgs.length - 1] = {
                         ...newMsgs[newMsgs.length - 1],
                         content: newMsgs[newMsgs.length - 1].content + data.token,
+                      };
+                      return { ...s, messages: newMsgs };
+                    }
+                    return s;
+                  });
+                });
+              }
+              // Metadata event — attach queryId and cacheHit to the last assistant message
+              if (data.meta) {
+                setSessions((prev) => {
+                  return prev.map(s => {
+                    if (s.id === activeSessionId) {
+                      const newMsgs = [...s.messages];
+                      newMsgs[newMsgs.length - 1] = {
+                        ...newMsgs[newMsgs.length - 1],
+                        queryId: data.meta.query_id,
+                        cacheHit: data.meta.cache_hit ?? false,
                       };
                       return { ...s, messages: newMsgs };
                     }

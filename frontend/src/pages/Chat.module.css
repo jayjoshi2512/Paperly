@@ -457,3 +457,282 @@
   color: var(--color-text-muted);
   font-size: var(--font-xs);
 }
+
+/* ── Upload progress ─────────────────────────────────────────── */
+.uploadProgress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  margin: var(--space-sm) 0;
+  animation: fadeIn 0.2s ease;
+}
+
+.uploadProgressLabel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--font-xs);
+  color: var(--color-text-secondary);
+}
+
+.uploadProgressPct {
+  font-weight: 600;
+  color: var(--color-accent);
+}
+
+.uploadProgressBar {
+  height: 6px;
+  background: var(--color-border);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.uploadProgressFill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-accent), #a78bfa);
+  border-radius: 99px;
+  transition: width 0.4s ease;
+}
+
+.uploadProgressMsg {
+  font-size: var(--font-xs);
+  color: var(--color-text-muted);
+}
+
+.uploadSuccess {
+  font-size: var(--font-xs);
+  color: #4ade80;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.uploadError {
+  font-size: var(--font-xs);
+  color: #f87171;
+  font-weight: 500;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Batch upload panel ──────────────────────────────────────── */
+.batchUploadPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: var(--space-md);
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.uploadRow {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.uploadRowHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.uploadRowFilename {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.uploadRowDone {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-success, #34d399);
+  white-space: nowrap;
+}
+
+.uploadRowError {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-error, #f87171);
+  white-space: nowrap;
+}
+
+/* ── Message column wrapper (bubble + feedback) ──────────────── */
+.messageColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── Actions row (FeedbackBar + Sources button) ──────────────── */
+.messageActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ── Sources (citations) button ──────────────────────────────── */
+.citationsBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  border-radius: 99px;
+  padding: 3px 10px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.citationsBtn:hover {
+  background: rgba(129, 140, 248, 0.12);
+  color: #a5b4fc;
+  border-color: rgba(129, 140, 248, 0.35);
+}
+
+/* ── Semantic cache badge ────────────────────────────────────── */
+.cacheBadge {
+  display: inline-block;
+  margin-top: var(--space-sm);
+  font-size: 10px;
+  font-weight: 600;
+  color: #a78bfa;
+  background: rgba(167, 139, 250, 0.12);
+  padding: 2px 7px;
+  border-radius: 99px;
+  letter-spacing: 0.03em;
+}
+
+/* ── Feedback Bar ────────────────────────────────────────────── */
+.feedbackBar {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-xs);
+  margin-top: var(--space-sm);
+  animation: fadeIn 0.3s ease;
+}
+
+.feedbackBtn {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.feedbackBtn:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+  border-color: var(--color-border-subtle);
+}
+
+.feedbackNeg {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  padding: var(--space-sm);
+  border-radius: var(--radius-md);
+  width: 100%;
+  max-width: 400px;
+}
+
+.feedbackNegLabel {
+  font-size: var(--font-xs);
+  color: var(--color-text-secondary);
+}
+
+.feedbackTextarea {
+  width: 100%;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-sm);
+  color: var(--color-text-primary);
+  font-size: var(--font-sm);
+  resize: vertical;
+}
+
+.feedbackTextarea:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.feedbackNegBtns {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.feedbackSubmitBtn {
+  background: var(--color-danger);
+  color: white;
+  border-radius: var(--radius-sm);
+  padding: 4px 12px;
+  font-size: var(--font-xs);
+  font-weight: 500;
+  transition: opacity 0.2s;
+}
+
+.feedbackSubmitBtn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.feedbackSubmitBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.feedbackSkipBtn {
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: var(--font-xs);
+}
+
+.feedbackSkipBtn:hover:not(:disabled) {
+  color: var(--color-text-primary);
+}
+
+.feedbackDone {
+  font-size: var(--font-xs);
+  color: #4ade80;
+  margin-top: var(--space-sm);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}

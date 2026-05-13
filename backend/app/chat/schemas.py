@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Literal, Optional
 from datetime import datetime
 
 class ChatRequest(BaseModel):
@@ -34,3 +34,23 @@ class ChatHistoryItem(BaseModel):
     query_text: str
     answer_text: Optional[str]
     created_at: datetime
+
+class FeedbackRequest(BaseModel):
+    rating: Literal["positive", "negative"]
+    correct_answer: Optional[str] = None  # Optional, for negative feedback
+
+class FeedbackResponse(BaseModel):
+    query_id: str
+    rating: str
+    message: str
+
+class CitationSource(BaseModel):
+    document_id: str
+    filename: str
+    pages: List[int]           # deduplicated, sorted page numbers cited
+    excerpt: str               # text of the highest-scoring chunk for this doc
+
+class CitationsResponse(BaseModel):
+    query_id: str
+    query_text: str
+    sources: List[CitationSource]

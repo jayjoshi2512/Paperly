@@ -1,10 +1,15 @@
 from contextlib import asynccontextmanager
+from datetime import datetime
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import logging
 import traceback
 
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+
+from app.limiter import limiter
 from app.database import AsyncSessionLocal, engine
 from sqlalchemy import select
 from app.models import Chunk, Document
@@ -40,6 +45,7 @@ async def lifespan(app: FastAPI):
             bm25_manager.build(ws_id, corpus)
             
     logger.info("BM25 index rebuilt successfully.")
+    app.state.start_time = datetime.now()  # for /health/detailed uptime
     yield
     # Shutdown: dispose engine to properly close all pooled connections
     logger.info("Disposing database engine...")
@@ -52,6 +58,10 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
+
+# Rate limiting
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # CORS configuration
 app.add_middleware(

@@ -70,47 +70,77 @@ def extract_text_from_pdf(file_bytes: bytes) -> List[PageText]:
 
 def extract_text_from_docx(file_bytes: bytes) -> List[PageText]:
     """
-    Extracts text from DOCX bytes.
-    Since DOCX does not have physical pages, we treat each ~3000 chars as a logical page.
+    Extract and virtually paginate text from a DOCX file.
+
+    DOCX has no concept of physical pages. We simulate virtual pages by
+    grouping every 500 words into one PageText, which allows downstream
+    citation code to say "virtual page 3" rather than "unknown".
+
+    Tables are extracted as pipe-separated rows to preserve structure.
+    Headings are preserved as plain text. Empty paragraphs are skipped.
     """
-    from docx import Document as DocxDocument
+    try:
+        from docx import Document as DocxDocument  # python-docx
+    except ImportError as e:
+        raise ExtractionError("python-docx is not installed: pip install python-docx") from e
 
     if not file_bytes:
         return []
 
     try:
         doc = DocxDocument(io.BytesIO(file_bytes))
-    except Exception:
-        raise ExtractionError("Invalid or corrupt DOCX file")
+    except Exception as e:
+        raise ExtractionError(f"Invalid or corrupt DOCX file: {e}") from e
 
-    full_text = "\n".join(p.text for p in doc.paragraphs if p.text.strip())
+    paragraphs: List[str] = []
 
-    if not full_text.strip():
+    # Extract body paragraphs (includes headings — their text is preserved)
+    for para in doc.paragraphs:
+        text = para.text.strip()
+        if text:
+            paragraphs.append(text)
+
+    # Extract tables: each row becomes a pipe-separated line
+    for table in doc.tables:
+        for row in table.rows:
+            row_text = " | ".join(
+                cell.text.strip() for cell in row.cells if cell.text.strip()
+            )
+            if row_text:
+                paragraphs.append(row_text)
+
+    if not paragraphs:
         return []
 
-    # Split into logical pages of ~3000 chars at paragraph boundaries
-    pages = []
-    chunk_size = 3000
-    current_chunk = ""
+    # Group into virtual pages of ~500 words each
+    pages: List[PageText] = []
     page_num = 1
+    current_page: List[str] = []
+    word_count = 0
 
-    for line in full_text.split("\n"):
-        if len(current_chunk) + len(line) + 1 > chunk_size and current_chunk:
+    for para in paragraphs:
+        para_words = len(para.split())
+        current_page.append(para)
+        word_count += para_words
+
+        if word_count >= 500:
+            page_text = "\n".join(current_page)
             pages.append(PageText(
                 page_number=page_num,
-                text=current_chunk.strip(),
-                char_count=len(current_chunk.strip())
+                text=page_text,
+                char_count=len(page_text)
             ))
             page_num += 1
-            current_chunk = line
-        else:
-            current_chunk += ("\n" if current_chunk else "") + line
+            current_page = []
+            word_count = 0
 
-    if current_chunk.strip():
+    # Flush the final partial page
+    if current_page:
+        page_text = "\n".join(current_page)
         pages.append(PageText(
             page_number=page_num,
-            text=current_chunk.strip(),
-            char_count=len(current_chunk.strip())
+            text=page_text,
+            char_count=len(page_text)
         ))
 
     return pages
@@ -118,7 +148,10 @@ def extract_text_from_docx(file_bytes: bytes) -> List[PageText]:
 
 def extract_text(file_bytes: bytes, filename: str) -> List[PageText]:
     """
-    Unified extractor — routes to PDF or DOCX based on filename extension.
+    Detect file type from extension and dispatch to the correct extractor.
+
+    Supported: .pdf, .docx, .doc
+    Raises ExtractionError for unsupported types.
     """
     ext = (filename or "").rsplit(".", 1)[-1].lower()
 
@@ -127,4 +160,6 @@ def extract_text(file_bytes: bytes, filename: str) -> List[PageText]:
     elif ext in ("docx", "doc"):
         return extract_text_from_docx(file_bytes)
     else:
-        raise ExtractionError(f"Unsupported file type: .{ext}")
+        raise ExtractionError(
+            f"Unsupported file type: .{ext}. Supported formats: pdf, docx"
+        )

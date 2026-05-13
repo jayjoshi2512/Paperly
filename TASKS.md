@@ -71,3 +71,15 @@
 - [x] Write deployment runbook in PROGRESS.md
 - [x] Write README.md
 - [x] Final update to tracking files
+
+## Phase 6: Feature Additions
+- [x] Feature 1 — DOCX Support (extractor upgraded: 500-word virtual pages + table extraction)
+- [x] Feature 2 — Rate Limiting Middleware (slowapi, per-endpoint limits)
+- [x] Feature 3 — Async Document Processing with Real-Time Status
+- [x] Feature 4 — Answer Feedback Loop → Real RAGAS Ground Truth
+- [x] Feature 5 — Semantic Query Cache
+- [x] Feature 6 — Batch Multi-File Upload
+- [x] Feature 7 — Cross-Document Citation Viewer
+- [x] Feature 8 — Chunking Strategy Benchmark Report
+- [x] Feature 9 — Workspace Q&A Export
+- [x] Feature 10 — System Health + Metrics Endpoint

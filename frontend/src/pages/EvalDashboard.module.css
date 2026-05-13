@@ -38,6 +38,31 @@
   transform: translateY(-1px);
 }
 
+.headerBtns {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.exportBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-sm);
+  font-weight: 500;
+  color: var(--color-text-muted);
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-md) var(--space-xl);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.exportBtn:hover {
+  background: rgba(255,255,255,0.1);
+  color: var(--color-text-primary);
+}
+
 /* ─── Stats grid ─── */
 .statsGrid {
   display: grid;
@@ -210,4 +235,168 @@
   padding: var(--space-3xl);
   color: var(--color-text-muted);
   font-size: var(--font-base);
+}
+
+/* ─── Feedback stats card ─── */
+.feedbackCard {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg) var(--space-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.feedbackHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.feedbackMetrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xl);
+}
+
+.feedbackMetric {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--font-sm);
+  color: var(--color-text-secondary);
+}
+
+.evalBadgeGood {
+  margin-left: auto;
+  font-size: var(--font-xs);
+  font-weight: 500;
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.1);
+  padding: 2px 8px;
+  border-radius: 99px;
+}
+
+.evalBadgeWarn {
+  margin-left: auto;
+  font-size: var(--font-xs);
+  font-weight: 500;
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.1);
+  padding: 2px 8px;
+  border-radius: 99px;
+}
+
+/* ── Benchmark card ─────────────────────────────────────── */
+.benchmarkCard {
+  background: var(--color-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  margin-bottom: var(--space-lg);
+}
+
+.benchTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: var(--space-md);
+  font-size: var(--font-sm);
+}
+
+.benchTable th {
+  text-align: left;
+  color: var(--color-text-muted);
+  font-weight: 500;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 6px 12px 8px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.benchTable td {
+  padding: 8px 12px;
+  color: var(--color-text);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+.benchTable tr:last-child td {
+  border-bottom: none;
+}
+
+.strategyBadge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(129,140,248,0.12);
+  color: #a5b4fc;
+  padding: 2px 8px;
+  border-radius: 99px;
+  text-transform: capitalize;
+}
+
+/* ── System Health widget ───────────────────────────────── */
+.healthCard {
+  background: var(--color-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  margin-bottom: var(--space-lg);
+}
+
+.healthGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 24px;
+  margin-top: var(--space-md);
+}
+
+.healthItem {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+}
+
+.healthDotGreen {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #4ade80;
+  flex-shrink: 0;
+  box-shadow: 0 0 6px rgba(74, 222, 128, 0.5);
+}
+
+.healthDotRed {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f87171;
+  flex-shrink: 0;
+  box-shadow: 0 0 6px rgba(248, 113, 113, 0.5);
+}
+
+.healthLabel {
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.healthExtra {
+  color: var(--color-text-muted);
+  font-size: 11px;
+}
+
+.evalBadgeDanger {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.1);
+  padding: 2px 8px;
+  border-radius: 99px;
+  margin-left: auto;
 }
