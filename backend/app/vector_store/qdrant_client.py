@@ -41,6 +41,7 @@ class PaperlyQdrant:
             self._sync_client = None
             self._async_client = AsyncQdrantClient(url=url)
         self.collection_name = "paperly_chunks"
+        self.chat_collection_name = "paperly_chat_memory"
         self._collection_ready = False
 
     async def _run(self, fn, *args, **kwargs):
@@ -84,6 +85,28 @@ class PaperlyQdrant:
                     field_name="workspace_id",
                     field_schema=qmodels.PayloadSchemaType.KEYWORD
                 )
+
+            # Local: Check and create chat_memory collection
+            exists_chat = any(c.name == self.chat_collection_name for c in collections.collections)
+            if exists_chat:
+                info = await asyncio.to_thread(client.get_collection, self.chat_collection_name)
+                actual_size = _get_vector_size(info)
+                if actual_size != target_size:
+                    await asyncio.to_thread(client.delete_collection, self.chat_collection_name)
+                    exists_chat = False
+
+            if not exists_chat:
+                await asyncio.to_thread(
+                    client.create_collection,
+                    collection_name=self.chat_collection_name,
+                    vectors_config=qmodels.VectorParams(size=target_size, distance=qmodels.Distance.COSINE)
+                )
+                await asyncio.to_thread(
+                    client.create_payload_index,
+                    collection_name=self.chat_collection_name,
+                    field_name="session_id",
+                    field_schema=qmodels.PayloadSchemaType.KEYWORD
+                )
         else:
             client = self._async_client
             collections = await client.get_collections()
@@ -111,6 +134,26 @@ class PaperlyQdrant:
                     field_schema=qmodels.PayloadSchemaType.KEYWORD
                 )
 
+            # Check and create chat_memory collection
+            exists_chat = any(c.name == self.chat_collection_name for c in collections.collections)
+            if exists_chat:
+                info = await client.get_collection(self.chat_collection_name)
+                actual_size = _get_vector_size(info)
+                if actual_size != target_size:
+                    await client.delete_collection(self.chat_collection_name)
+                    exists_chat = False
+
+            if not exists_chat:
+                await client.create_collection(
+                    collection_name=self.chat_collection_name,
+                    vectors_config=qmodels.VectorParams(size=target_size, distance=qmodels.Distance.COSINE)
+                )
+                await client.create_payload_index(
+                    collection_name=self.chat_collection_name,
+                    field_name="session_id",
+                    field_schema=qmodels.PayloadSchemaType.KEYWORD
+                )
+
         self._collection_ready = True
 
 
@@ -128,6 +171,22 @@ class PaperlyQdrant:
         else:
             await self._async_client.upsert(
                 collection_name=self.collection_name,
+                points=points
+            )
+
+    async def upsert_chat_memory(self, points: List[qmodels.PointStruct]):
+        if not points:
+            return
+        await self.setup_collection()
+        if self._is_local:
+            await asyncio.to_thread(
+                self._sync_client.upsert,
+                collection_name=self.chat_collection_name,
+                points=points
+            )
+        else:
+            await self._async_client.upsert(
+                collection_name=self.chat_collection_name,
                 points=points
             )
 
@@ -169,6 +228,35 @@ class PaperlyQdrant:
                 score=r.score
             ) for r in results
         ]
+
+    async def search_chat_memory(self, embedding: List[float], session_id: str, top_k: int = 2) -> List[dict]:
+        await self.setup_collection()
+        query_filter = qmodels.Filter(
+            must=[
+                qmodels.FieldCondition(
+                    key="session_id",
+                    match=qmodels.MatchValue(value=session_id)
+                )
+            ]
+        )
+        if self._is_local:
+            results = await asyncio.to_thread(
+                self._sync_client.search,
+                collection_name=self.chat_collection_name,
+                query_vector=embedding,
+                limit=top_k,
+                query_filter=query_filter,
+                with_payload=True
+            )
+        else:
+            results = await self._async_client.search(
+                collection_name=self.chat_collection_name,
+                query_vector=embedding,
+                limit=top_k,
+                query_filter=query_filter,
+                with_payload=True
+            )
+        return [r.payload for r in results]
 
     async def delete_by_document_id(self, document_id: str):
         """Delete all vectors for a given document."""

@@ -77,6 +77,17 @@ class Chunk(Base):
 
     document = relationship("Document", back_populates="chunks")
 
+class ChatSession(Base):
+    __tablename__ = "chat_sessions"
+
+    id = Column(String(36), primary_key=True)
+    workspace_id = Column(String(36), ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
+    title = Column(String(255))
+    summary_state = Column(Text)
+    is_deleted = Column(Boolean, nullable=False, default=False)
+    created_at = Column(DateTime, nullable=False, server_default=text("CURRENT_TIMESTAMP"))
+
 class Query(Base):
     __tablename__ = "queries"
 
@@ -91,6 +102,7 @@ class Query(Base):
     faithfulness_score = Column(Float)
     relevancy_score = Column(Float)
     latency_ms = Column(Integer)
+    is_deleted = Column(Boolean, nullable=False, default=False)
     created_at = Column(DateTime, nullable=False, server_default=text("CURRENT_TIMESTAMP"))
 
     workspace = relationship("Workspace", back_populates="queries")

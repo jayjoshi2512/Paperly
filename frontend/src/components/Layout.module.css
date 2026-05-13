@@ -134,30 +134,67 @@
   gap: 2px;
 }
 
-.sessionItem {
-  padding: var(--space-sm) var(--space-md);
+.sessionItemWrapper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.sessionItemWrapper:hover {
+  background: var(--color-surface-hover);
+}
+
+.sessionItemWrapper.active {
+  background: var(--color-accent-muted);
+}
+
+.sessionItem {
+  flex: 1;
+  padding: var(--space-sm) var(--space-md);
   font-size: var(--font-xs);
   color: var(--color-text-secondary);
   text-align: left;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  transition: all var(--transition-fast);
   background: transparent;
   border: none;
   cursor: pointer;
+  transition: color var(--transition-fast);
 }
 
-.sessionItem:hover {
-  background: var(--color-surface-hover);
+.sessionItemWrapper:hover .sessionItem {
   color: var(--color-text-primary);
 }
 
-.sessionItem.active {
-  background: var(--color-accent-muted);
+.sessionItemWrapper.active .sessionItem {
   color: var(--color-text-primary);
   font-weight: 500;
+}
+
+.sessionDeleteBtn {
+  display: none;
+  padding: 4px;
+  margin-right: 4px;
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.sessionItemWrapper:hover .sessionDeleteBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sessionDeleteBtn:hover {
+  background: var(--color-danger-muted);
+  color: var(--color-danger);
 }
 
 /* ─── Footer ─── */
@@ -197,4 +234,133 @@
   overflow: hidden;
   min-width: 0;
   background: var(--color-bg);
+}
+
+/* ─── Modal ─── */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease;
+}
+
+.modal {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-width: 440px;
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+  animation: slideIn 0.3s ease;
+}
+
+.modalHeader {
+  padding: var(--space-lg) var(--space-xl);
+  border-bottom: 1px solid var(--color-border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modalTitle {
+  font-size: var(--font-md);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.modalIcon {
+  color: var(--color-danger);
+}
+
+.closeBtn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  transition: color var(--transition-fast);
+  padding: 0;
+}
+
+.closeBtn:hover {
+  color: var(--color-text-primary);
+}
+
+.modalBody {
+  padding: var(--space-xl);
+  font-size: var(--font-base);
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+.modalError {
+  margin-top: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-danger-muted);
+  color: var(--color-danger);
+  border-radius: var(--radius-md);
+  font-size: var(--font-sm);
+}
+
+.modalFooter {
+  padding: var(--space-lg) var(--space-xl);
+  background: var(--color-surface-raised);
+  border-top: 1px solid var(--color-border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-md);
+}
+
+.cancelBtn {
+  padding: var(--space-sm) var(--space-lg);
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.cancelBtn:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+}
+
+.confirmBtn {
+  padding: var(--space-sm) var(--space-lg);
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  color: white;
+  background: var(--color-danger);
+  border: 1px solid var(--color-danger);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.confirmBtn:hover {
+  background: #b91c1c;
+  border-color: #b91c1c;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }

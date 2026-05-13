@@ -1,7 +1,8 @@
+import { useState } from "react";
 import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useStreamingChat } from "../hooks/useStreamingChat";
-import { MessageSquare, FileText, BarChart2, LogOut, Plus } from "lucide-react";
+import { MessageSquare, FileText, BarChart2, LogOut, Plus, Trash2, AlertTriangle, X } from "lucide-react";
 import styles from "./Layout.module.css";
 
 export default function Layout() {
@@ -9,6 +10,8 @@ export default function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
   const chatState = useStreamingChat();
+  const [sessionToDelete, setSessionToDelete] = useState(null);
+  const [deleteError, setDeleteError] = useState(null);
 
   const handleLogout = () => {
     logout();
@@ -16,6 +19,17 @@ export default function Layout() {
   };
 
   const isActive = (path) => location.pathname.startsWith(path);
+
+  const confirmDelete = async () => {
+    if (!sessionToDelete) return;
+    try {
+      await chatState.deleteSession(sessionToDelete.id);
+      setSessionToDelete(null);
+      setDeleteError(null);
+    } catch (err) {
+      setDeleteError(err.message || "Failed to delete");
+    }
+  };
 
   return (
     <div className={styles.shell}>
@@ -62,17 +76,28 @@ export default function Layout() {
           
           <div className={styles.sessionList}>
             {chatState.sessions.map(s => (
-              <button 
-                key={s.id} 
-                className={`${styles.sessionItem} ${chatState.currentSessionId === s.id ? styles.active : ""}`}
-                onClick={() => {
-                  chatState.switchSession(s.id);
-                  if (!isActive("/chat")) navigate("/chat");
-                }}
-                title={s.title}
-              >
-                {s.title}
-              </button>
+              <div key={s.id} className={`${styles.sessionItemWrapper} ${chatState.currentSessionId === s.id ? styles.active : ""}`}>
+                <button 
+                  className={styles.sessionItem}
+                  onClick={() => {
+                    chatState.switchSession(s.id);
+                    if (!isActive("/chat")) navigate("/chat");
+                  }}
+                  title={s.title}
+                >
+                  {s.title}
+                </button>
+                <button 
+                  className={styles.sessionDeleteBtn}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSessionToDelete(s);
+                  }}
+                  title="Delete Chat"
+                >
+                  <Trash2 size={12} />
+                </button>
+              </div>
             ))}
           </div>
         </nav>
@@ -88,6 +113,30 @@ export default function Layout() {
       <main className={styles.main}>
         <Outlet context={chatState} />
       </main>
+
+      {sessionToDelete && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modal}>
+            <div className={styles.modalHeader}>
+              <div className={styles.modalTitle}>
+                <AlertTriangle size={20} className={styles.modalIcon} />
+                Delete Chat Session
+              </div>
+              <button onClick={() => setSessionToDelete(null)} className={styles.closeBtn}>
+                <X size={18} />
+              </button>
+            </div>
+            <div className={styles.modalBody}>
+              Are you sure you want to delete this chat? This action cannot be undone.
+              {deleteError && <div className={styles.modalError}>{deleteError}</div>}
+            </div>
+            <div className={styles.modalFooter}>
+              <button onClick={() => setSessionToDelete(null)} className={styles.cancelBtn}>Cancel</button>
+              <button onClick={confirmDelete} className={styles.confirmBtn}>Delete Chat</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -53,6 +53,19 @@ export const useStreamingChat = () => {
     setCurrentSessionId(id);
   };
 
+  const deleteSession = async (id) => {
+    try {
+      await fetchApi(`/chat/session/${id}`, { method: "DELETE" });
+      setSessions(prev => prev.filter(s => s.id !== id));
+      if (currentSessionId === id) {
+        setCurrentSessionId(null);
+      }
+    } catch (e) {
+      console.error("Failed to delete session", e);
+      throw e;
+    }
+  };
+
   const sendMessage = async (query) => {
     let activeSessionId = currentSessionId;
     let isNewSession = false;
@@ -175,7 +188,8 @@ export const useStreamingChat = () => {
     phase, 
     sendMessage, 
     startNewSession, 
-    switchSession, 
+    switchSession,
+    deleteSession, 
     PHASES 
   };
 };

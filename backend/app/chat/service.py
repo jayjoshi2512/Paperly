@@ -2,16 +2,20 @@ import time
 import json
 import uuid
 import logging
+import asyncio
 from typing import AsyncGenerator
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from fastapi import HTTPException
 
-from app.models import Query, UnansweredQuery
+from app.models import Query, UnansweredQuery, ChatSession
 from app.chat.schemas import ChatRequest
 from app.rag.retrieval import hybrid_search, RetrievedChunk
 from app.rag.reranker import reranker, RerankedChunk
 from app.rag.generator import generator
+from app.chat.memory import run_memory_cleanup
+from app.rag.embedder import embedder
+from app.vector_store.qdrant_client import qdrant_db
 
 logger = logging.getLogger(__name__)
 
@@ -67,13 +71,54 @@ async def _save_trace(
 
 async def process_query(db: AsyncSession, request: ChatRequest, workspace_id: str, user_id: str) -> dict:
     start_time = time.time()
+    chat_history = []
+    level3_summary = None
+    level2_context = []
     
-    retrieved_chunks = await hybrid_search(request.query, workspace_id, top_k=20)
-    reranked_chunks = reranker.rerank(request.query, retrieved_chunks, top_n=5)
-    answer = await generator.generate(request.query, reranked_chunks)
+    if request.session_id:
+        # Level 3 Summary
+        session_res = await db.execute(select(ChatSession).where(ChatSession.id == request.session_id))
+        chat_session = session_res.scalar_one_or_none()
+        if chat_session and chat_session.summary_state:
+            level3_summary = chat_session.summary_state
+
+        # Level 2 Semantic
+        query_emb = await embedder.embed_text(request.query)
+        level2_results = await qdrant_db.search_chat_memory(query_emb, request.session_id, top_k=2)
+        level2_context = [r.get("text") for r in level2_results if r.get("text")]
+
+        # Level 1 Buffer
+        result = await db.execute(
+            select(Query)
+            .where(Query.session_id == request.session_id)
+            .order_by(Query.created_at.asc())
+        )
+        old_queries = result.scalars().all()
+        for oq in old_queries:
+            chat_history.append({"role": "user", "content": oq.query_text})
+            if oq.answer_text:
+                chat_history.append({"role": "assistant", "content": oq.answer_text})
+
+    chat_history = chat_history[-6:]  # Last 3 turns
+    standalone_query = await generator.condense_query(request.query, chat_history)
+
+    retrieved_chunks = await hybrid_search(standalone_query, workspace_id, top_k=20)
+    reranked_chunks = reranker.rerank(standalone_query, retrieved_chunks, top_n=5)
+    
+    # Inject Level 2 and Level 3
+    if level3_summary:
+        chat_history.insert(0, {"role": "system", "content": f"Long-term Session Summary: {level3_summary}"})
+    if level2_context:
+        past_str = "\n---\n".join(level2_context)
+        chat_history.insert(0, {"role": "system", "content": f"Recalled Past Conversations:\n{past_str}"})
+
+    answer = await generator.generate(request.query, reranked_chunks, chat_history)
     
     latency_ms = int((time.time() - start_time) * 1000)
     db_query = await _save_trace(db, workspace_id, user_id, request.query, answer, reranked_chunks, latency_ms, request.session_id)
+    
+    if request.session_id:
+        asyncio.create_task(run_memory_cleanup(request.session_id, db_query.id, workspace_id, user_id))
     
     return {
         "query_id": db_query.id,
@@ -82,13 +127,50 @@ async def process_query(db: AsyncSession, request: ChatRequest, workspace_id: st
 
 async def process_query_stream(db: AsyncSession, request: ChatRequest, workspace_id: str, user_id: str) -> AsyncGenerator[str, None]:
     start_time = time.time()
+    chat_history = []
+    level3_summary = None
+    level2_context = []
     
-    retrieved_chunks = await hybrid_search(request.query, workspace_id, top_k=20)
-    reranked_chunks = reranker.rerank(request.query, retrieved_chunks, top_n=5)
+    if request.session_id:
+        # Level 3 Summary
+        session_res = await db.execute(select(ChatSession).where(ChatSession.id == request.session_id))
+        chat_session = session_res.scalar_one_or_none()
+        if chat_session and chat_session.summary_state:
+            level3_summary = chat_session.summary_state
+
+        # Level 2 Semantic
+        query_emb = await embedder.embed_text(request.query)
+        level2_results = await qdrant_db.search_chat_memory(query_emb, request.session_id, top_k=2)
+        level2_context = [r.get("text") for r in level2_results if r.get("text")]
+
+        # Level 1 Buffer
+        result = await db.execute(
+            select(Query)
+            .where(Query.session_id == request.session_id)
+            .order_by(Query.created_at.asc())
+        )
+        old_queries = result.scalars().all()
+        for oq in old_queries:
+            chat_history.append({"role": "user", "content": oq.query_text})
+            if oq.answer_text:
+                chat_history.append({"role": "assistant", "content": oq.answer_text})
+
+    chat_history = chat_history[-6:]  # Last 3 turns
+    standalone_query = await generator.condense_query(request.query, chat_history)
+
+    retrieved_chunks = await hybrid_search(standalone_query, workspace_id, top_k=20)
+    reranked_chunks = reranker.rerank(standalone_query, retrieved_chunks, top_n=5)
     
+    # Inject Level 2 and Level 3
+    if level3_summary:
+        chat_history.insert(0, {"role": "system", "content": f"Long-term Session Summary: {level3_summary}"})
+    if level2_context:
+        past_str = "\n---\n".join(level2_context)
+        chat_history.insert(0, {"role": "system", "content": f"Recalled Past Conversations:\n{past_str}"})
+
     full_answer = []
     
-    async for token in generator.stream_generate(request.query, reranked_chunks):
+    async for token in generator.stream_generate(request.query, reranked_chunks, chat_history):
         full_answer.append(token)
         yield token
 
@@ -96,7 +178,9 @@ async def process_query_stream(db: AsyncSession, request: ChatRequest, workspace
     latency_ms = int((time.time() - start_time) * 1000)
 
     try:
-        await _save_trace(db, workspace_id, user_id, request.query, answer_text, reranked_chunks, latency_ms, request.session_id)
+        db_query = await _save_trace(db, workspace_id, user_id, request.query, answer_text, reranked_chunks, latency_ms, request.session_id)
+        if request.session_id:
+            asyncio.create_task(run_memory_cleanup(request.session_id, db_query.id, workspace_id, user_id))
     except Exception as e:
         logger.warning(f"Failed to save query trace (non-fatal): {e}")
         await db.rollback()
