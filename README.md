@@ -8,10 +8,208 @@ Built with **FastAPI**, **React**, **Qdrant**, **Groq**, and **Cohere** — desi
 
 ## 🌟 Enterprise Features
 
-### 1. 3-Level Conversational Memory
-- **Level 1 – Short-Term Buffer:** Sliding window of the last 3 turns for pronoun resolution.
-- **Level 2 – Semantic Vector History:** Every Q&A is embedded and stored in a dedicated Qdrant collection. New queries semantically recall any past topic.
-- **Level 3 – Session Summarization:** Background LLM synthesizes a running session summary every 5 turns, injected into the system prompt for long-range coherence.
+### 1. 3-Level Conversational Memory Architecture
+
+Paperly does not simply pass the last N chat messages into the LLM. It implements a fully engineered, three-tier memory system that mirrors how humans actually retain and recall information — short-term, episodic, and semantic long-term memory. Every incoming query triggers all three levels before a response is generated.
+
+---
+
+#### Level 1 — Short-Term Buffer (Immediate Context Window)
+
+**What it does:** Keeps the last 3 conversation turns (6 messages: 3 user + 3 assistant) in a sliding window. This resolves follow-up pronouns and immediate references ("What did you mean by that?", "Can you explain the second point?") without bloating the LLM context.
+
+**How it works (code: `service.py` lines 108–120):**
+
+```python
+# Fetch all Q&A for this session from MySQL, in chronological order
+result = await db.execute(
+    select(Query)
+    .where(Query.session_id == request.session_id)
+    .order_by(Query.created_at.asc())
+)
+old_queries = result.scalars().all()
+for oq in old_queries:
+    chat_history.append({"role": "user",      "content": oq.query_text})
+    chat_history.append({"role": "assistant",  "content": oq.answer_text})
+
+chat_history = chat_history[-6:]  # Strict 3-turn window
+```
+
+Every previous query and answer for the current session is loaded from MySQL, then immediately **truncated to the last 6 messages** before being sent to the LLM. This keeps the prompt compact while preserving immediate conversational continuity.
+
+**Before the LLM call**, the condensed history is also passed to a `condense_query()` step that rewrites the user's latest question into a fully self-contained, standalone query — eliminating ambiguous pronouns before retrieval runs:
+
+```python
+standalone_query = await generator.condense_query(request.query, chat_history)
+```
+
+---
+
+#### Level 2 — Semantic Vector Memory (Episodic Recall)
+
+**What it does:** Every completed Q&A exchange is **embedded and stored as a vector** in a dedicated Qdrant collection (`chat_memory`). When a new query arrives, Paperly performs a **vector similarity search across the entire session's history** — not just the last 3 turns — to pull back semantically related exchanges from hours or sessions ago.
+
+**How it works — Write path (code: `memory.py` lines 20–35):**
+
+After every response is streamed and saved, a background task fires asynchronously:
+
+```python
+asyncio.create_task(run_memory_cleanup(session_id, db_query.id, workspace_id, user_id))
+```
+
+Inside `run_memory_cleanup()`:
+
+```python
+# Combine Q&A into a single string and embed it
+text_to_embed = f"User: {q.query_text}\nAssistant: {q.answer_text}"
+embedding = await embedder.embed_text(text_to_embed)
+
+# Store as a Qdrant vector point tagged with the session_id
+point = qmodels.PointStruct(
+    id=query_id,
+    vector=embedding,
+    payload={"session_id": session_id, "text": text_to_embed, "role": "exchange"}
+)
+await qdrant_db.upsert_chat_memory([point])
+```
+
+The full exchange (user + assistant) is embedded together so the vector captures the complete semantic meaning of the topic discussed.
+
+**How it works — Read path (code: `service.py` lines 104–106):**
+
+```python
+# The current query's embedding is re-used to search past exchanges
+level2_results = await qdrant_db.search_chat_memory(query_emb, request.session_id, top_k=2)
+level2_context = [r.get("text") for r in level2_results if r.get("text")]
+```
+
+The top-2 semantically closest past exchanges are retrieved and prepended to the chat history as system messages:
+
+```python
+past_str = "\n---\n".join(level2_context)
+chat_history.insert(0, {"role": "system", "content": f"Recalled Past Conversations:\n{past_str}"})
+```
+
+**Key design decision:** The Qdrant search is **scoped by `session_id`** — it only searches within the current session's memory, not across other users or conversations.
+
+---
+
+#### Level 3 — Long-Term Session Summarization (Semantic State)
+
+**What it does:** Every **5th query** in a session, a background LLM call synthesizes the most recent 5 exchanges into a rolling **"Session Summary State"** — a compressed representation of the user's intent, the key entities discussed, and the overall direction of the conversation. This summary persists in MySQL and is injected into the system prompt on every subsequent query.
+
+**How it works — Trigger (code: `memory.py` lines 51–54):**
+
+```python
+count_result = await db.execute(
+    select(func.count(Query.id)).where(Query.session_id == session_id)
+)
+query_count = count_result.scalar()
+
+if query_count > 0 and query_count % 5 == 0:  # Every 5th query
+    # ... run summarization
+```
+
+**Summarization process (code: `memory.py` lines 55–72):**
+
+```python
+# Fetch the 5 most recent exchanges
+recent_queries = await db.execute(
+    select(Query).where(Query.session_id == session_id)
+    .order_by(Query.created_at.desc()).limit(5)
+)
+
+# Build exchange list for LLM
+exchanges = [
+    {"role": "user",      "content": rq.query_text},
+    {"role": "assistant", "content": rq.answer_text},
+    ...
+]
+
+# The LLM updates the summary — passing the existing summary so it can be refined
+new_summary = await generator.summarize_session(chat_session.summary_state, exchanges)
+chat_session.summary_state = new_summary
+await db.commit()
+```
+
+The `summarize_session()` call passes the **previous summary** alongside the new exchanges, so the LLM produces an **incremental refinement** rather than a from-scratch summary every time.
+
+**How it works — Read path (code: `service.py` lines 98–102):**
+
+```python
+session_res = await db.execute(select(ChatSession).where(ChatSession.id == request.session_id))
+chat_session = session_res.scalar_one_or_none()
+if chat_session and chat_session.summary_state:
+    level3_summary = chat_session.summary_state
+```
+
+If a summary exists, it is injected at position 0 of the chat history:
+
+```python
+chat_history.insert(0, {"role": "system", "content": f"Long-term Session Summary: {level3_summary}"})
+```
+
+---
+
+#### Full Memory Pipeline — Request Lifecycle
+
+Every streaming chat request executes this pipeline in order:
+
+```
+User sends query
+        │
+        ▼
+[Embed query] ──► Cohere embed-english-v3.0 (1024-dim vector)
+        │
+        ▼
+[Semantic Cache lookup] ──► cosine similarity ≥ 0.92 → stream cached answer + return
+        │ (cache miss)
+        ▼
+[Level 3] Load ChatSession.summary_state from MySQL
+        │
+        ▼
+[Level 2] Vector search in Qdrant chat_memory (top-k=2, scoped by session_id)
+        │
+        ▼
+[Level 1] Load all session queries from MySQL → truncate to last 6 messages
+        │
+        ▼
+[Condense query] ──► LLM rewrites query into standalone form using Level 1 buffer
+        │
+        ▼
+[Hybrid Retrieval] Dense (Qdrant) + Sparse (BM25) → RRF fusion → top-20 chunks
+        │
+        ▼
+[Reranker] BGE cross-encoder → top-5 chunks
+        │
+        ▼
+[Build prompt] Level 3 summary → Level 2 recall → Level 1 buffer → retrieved chunks
+        │
+        ▼
+[LLM Generation] Groq llama-3.3-70b-versatile streaming
+        │
+        ▼
+[Save trace] MySQL (query, answer, chunks, latency, cache_hit)
+        │
+        ▼
+[Background tasks]
+    ├─► Semantic cache: store answer vector (if answered)
+    ├─► Level 2: embed + upsert Q&A exchange to Qdrant chat_memory
+    └─► Level 3: if turn % 5 == 0 → LLM summarize → save to ChatSession
+```
+
+---
+
+#### Why This Design?
+
+| Problem | Naive Approach | Paperly's Solution |
+|---------|---------------|-------------------|
+| Long conversations blow up token limit | Pass all history | Level 1: strict 3-turn buffer |
+| Early context forgotten after buffer fills | None | Level 2: vector similarity recall |
+| Topic drift across many turns | Re-read all history | Level 3: rolling LLM summary |
+| Repeated identical questions slow down the LLM | None | Semantic cache (0.92 cosine threshold) |
+| Follow-up pronouns confuse retrieval | Pass raw query | Query condensation step |
+
 
 ### 2. Multi-Stage Hybrid Retrieval
 - **Dense Vector Search** via Cohere `embed-english-v3.0` (1024 dims)
